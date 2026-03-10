@@ -1,0 +1,340 @@
+import sys
+import json
+import os
+
+from PySide6.QtWidgets import (
+    QApplication, QWidget, QLabel, QPushButton,
+    QVBoxLayout, QLineEdit, QComboBox,
+    QCheckBox, QMessageBox
+)
+
+##########################new section
+# DATABASE SETTINGS
+
+DATABASE_FILE = "database.json"
+
+DEFAULT_DATABASE = {
+    "sport": {
+        "tennis": [],
+        "football": [],
+        "volleyball": [],
+        "kayaking": []
+    },
+    "hobby": {
+        "pottery": [],
+        "beading": [],
+        "drawing": []
+    },
+    "music": {
+        "guitar": [],
+        "piano": [],
+        "vocal": []
+    }
+}
+
+##########################new section
+# DATABASE FUNCTIONS
+
+def load_database():
+
+    if not os.path.exists(DATABASE_FILE):
+
+        with open(DATABASE_FILE, "w") as file:
+            json.dump(DEFAULT_DATABASE, file, indent=4)
+
+    with open(DATABASE_FILE, "r") as file:
+        return json.load(file)
+
+
+def save_database(data):
+
+    with open(DATABASE_FILE, "w") as file:
+        json.dump(data, file, indent=4)
+
+##########################new section
+# SAVE USER
+
+def save_user(profile):
+
+    database = load_database()
+
+    category = profile["category"]
+    subcategory = profile["subcategory"]
+
+    database[category][subcategory].append(profile)
+
+    save_database(database)
+
+##########################new section
+# ADD PROFILE WINDOW
+
+class AddProfileWindow(QWidget):
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.setWindowTitle("Add Profile")
+
+        layout = QVBoxLayout()
+
+##########################new section
+# NAME
+
+        layout.addWidget(QLabel("Name Surname"))
+        self.name_input = QLineEdit()
+        layout.addWidget(self.name_input)
+
+##########################new section
+# EMAIL
+
+        layout.addWidget(QLabel("Email"))
+        self.email_input = QLineEdit()
+        layout.addWidget(self.email_input)
+
+##########################new section
+# CATEGORY
+
+        layout.addWidget(QLabel("Category"))
+
+        self.category_box = QComboBox()
+        self.category_box.addItems(["sport", "hobby", "music"])
+        layout.addWidget(self.category_box)
+
+##########################new section
+# SUBCATEGORY
+
+        layout.addWidget(QLabel("Subcategory"))
+
+        self.subcategory_box = QComboBox()
+        layout.addWidget(self.subcategory_box)
+
+##########################new section
+# CATEGORY CHANGE EVENT
+
+        self.category_box.currentTextChanged.connect(self.update_subcategories)
+
+        self.update_subcategories(self.category_box.currentText())
+
+##########################new section
+# LEVEL
+
+        layout.addWidget(QLabel("Level"))
+
+        self.level_box = QComboBox()
+        self.level_box.addItems([
+            "beginner",
+            "middle",
+            "advanced",
+            "professional"
+        ])
+
+        layout.addWidget(self.level_box)
+
+##########################new section
+# CITY
+
+        layout.addWidget(QLabel("City"))
+
+        self.city_input = QLineEdit()
+        layout.addWidget(self.city_input)
+
+##########################new section
+# DAYS CHECKBOXES
+
+        layout.addWidget(QLabel("Select available days"))
+
+        self.mon = QCheckBox("Monday")
+        self.tue = QCheckBox("Tuesday")
+        self.wed = QCheckBox("Wednesday")
+        self.thu = QCheckBox("Thursday")
+        self.fri = QCheckBox("Friday")
+        self.sat = QCheckBox("Saturday")
+        self.sun = QCheckBox("Sunday")
+
+        layout.addWidget(self.mon)
+        layout.addWidget(self.tue)
+        layout.addWidget(self.wed)
+        layout.addWidget(self.thu)
+        layout.addWidget(self.fri)
+        layout.addWidget(self.sat)
+        layout.addWidget(self.sun)
+
+##########################new section
+# TIME
+
+        layout.addWidget(QLabel("Preferred time"))
+
+        self.time_box = QComboBox()
+        self.time_box.addItems([
+            "morning",
+            "afternoon",
+            "evening"
+        ])
+
+        layout.addWidget(self.time_box)
+
+##########################new section
+# SAVE BUTTON
+
+        save_button = QPushButton("Save Profile")
+        save_button.clicked.connect(self.save_profile)
+
+        layout.addWidget(save_button)
+
+##########################new section
+# SET LAYOUT
+
+        self.setLayout(layout)
+
+##########################new section
+# UPDATE SUBCATEGORIES
+
+    def update_subcategories(self, category):
+
+        self.subcategory_box.clear()
+
+        if category == "sport":
+
+            self.subcategory_box.addItems([
+                "tennis",
+                "football",
+                "volleyball",
+                "kayaking"
+            ])
+
+        elif category == "hobby":
+
+            self.subcategory_box.addItems([
+                "pottery",
+                "beading",
+                "drawing"
+            ])
+
+        elif category == "music":
+
+            self.subcategory_box.addItems([
+                "guitar",
+                "piano",
+                "vocal"
+            ])
+
+##########################new section
+# SAVE PROFILE LOGIC
+
+    def save_profile(self):
+
+        selected_days = []
+
+        if self.mon.isChecked():
+            selected_days.append("Monday")
+
+        if self.tue.isChecked():
+            selected_days.append("Tuesday")
+
+        if self.wed.isChecked():
+            selected_days.append("Wednesday")
+
+        if self.thu.isChecked():
+            selected_days.append("Thursday")
+
+        if self.fri.isChecked():
+            selected_days.append("Friday")
+
+        if self.sat.isChecked():
+            selected_days.append("Saturday")
+
+        if self.sun.isChecked():
+            selected_days.append("Sunday")
+
+        profile = {
+
+            "name": self.name_input.text(),
+            "email": self.email_input.text(),
+            "category": self.category_box.currentText(),
+            "subcategory": self.subcategory_box.currentText(),
+            "level": self.level_box.currentText(),
+            "city": self.city_input.text().lower(),
+            "days": selected_days,
+            "time": self.time_box.currentText()
+        }
+
+        save_user(profile)
+
+        QMessageBox.information(self, "Success", "Profile saved successfully")
+
+##########################new section
+# WELCOME WINDOW
+
+class WelcomeWindow(QWidget):
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.setWindowTitle("UBSCOMe")
+
+        layout = QVBoxLayout()
+
+##########################new section
+# TITLE
+
+        title = QLabel("Welcome to the UBS Hobbies to Meet")
+        layout.addWidget(title)
+
+##########################new section
+# MENU BUTTONS
+
+        btn1 = QPushButton("1. Add your profile")
+        btn1.clicked.connect(self.open_add_profile)
+        layout.addWidget(btn1)
+
+        btn2 = QPushButton("2. Select contact from existing users")
+        btn2.clicked.connect(self.not_ready)
+        layout.addWidget(btn2)
+
+        btn3 = QPushButton("3. Add new category / group")
+        btn3.clicked.connect(self.not_ready)
+        layout.addWidget(btn3)
+
+        btn4 = QPushButton("4. View existing groups")
+        btn4.clicked.connect(self.not_ready)
+        layout.addWidget(btn4)
+
+        btn5 = QPushButton("5. Edit your profile")
+        btn5.clicked.connect(self.not_ready)
+        layout.addWidget(btn5)
+
+        btn6 = QPushButton("6. Collaboration / Event")
+        btn6.clicked.connect(self.not_ready)
+        layout.addWidget(btn6)
+
+##########################new section
+# SET LAYOUT
+
+        self.setLayout(layout)
+
+##########################new section
+# OPEN ADD PROFILE
+
+    def open_add_profile(self):
+
+        self.add_window = AddProfileWindow()
+        self.add_window.show()
+
+##########################new section
+# PLACEHOLDER
+
+    def not_ready(self):
+
+        QMessageBox.information(self, "Info", "Feature will be added later")
+
+##########################new section
+# START APPLICATION
+
+app = QApplication(sys.argv)
+
+window = WelcomeWindow()
+window.show()
+
+sys.exit(app.exec())
