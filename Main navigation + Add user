@@ -5,7 +5,8 @@ import os
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton,
     QVBoxLayout, QLineEdit, QComboBox,
-    QCheckBox, QMessageBox
+    QCheckBox, QMessageBox, QTableWidget,
+QTableWidgetItem
 )
 
 ##########################new section
@@ -51,6 +52,18 @@ def save_database(data):
     with open(DATABASE_FILE, "w") as file:
         json.dump(data, file, indent=4)
 
+##########################new section
+# SEARCH USERS FUNCTION
+
+def search_users(category, subcategory):
+
+    database = load_database()
+
+    if category in database and subcategory in database[category]:
+
+        return database[category][subcategory]
+
+    return []
 ##########################new section
 # SAVE USER
 
@@ -262,6 +275,126 @@ class AddProfileWindow(QWidget):
         save_user(profile)
 
         QMessageBox.information(self, "Success", "Profile saved successfully")
+##########################new section
+# SEARCH CONTACTS WINDOW
+
+class SearchContactsWindow(QWidget):
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.setWindowTitle("Search Contacts")
+
+        layout = QVBoxLayout()
+
+##########################new section
+# CATEGORY
+
+        layout.addWidget(QLabel("Category"))
+
+        self.category_box = QComboBox()
+        self.category_box.addItems(["sport", "hobby", "music"])
+
+        layout.addWidget(self.category_box)
+
+##########################new section
+# SUBCATEGORY
+
+        layout.addWidget(QLabel("Subcategory"))
+
+        self.subcategory_box = QComboBox()
+
+        layout.addWidget(self.subcategory_box)
+
+##########################new section
+# CATEGORY CHANGE EVENT
+
+        self.category_box.currentTextChanged.connect(self.update_subcategories)
+
+        self.update_subcategories(self.category_box.currentText())
+
+##########################new section
+# SEARCH BUTTON
+
+        search_button = QPushButton("Search")
+
+        search_button.clicked.connect(self.perform_search)
+
+        layout.addWidget(search_button)
+
+##########################new section
+# RESULTS TABLE
+
+        self.table = QTableWidget()
+
+        layout.addWidget(self.table)
+
+##########################new section
+# SET LAYOUT
+
+        self.setLayout(layout)
+
+##########################new section
+# UPDATE SUBCATEGORIES
+
+    def update_subcategories(self, category):
+
+        self.subcategory_box.clear()
+
+        if category == "sport":
+
+            self.subcategory_box.addItems([
+                "tennis",
+                "football",
+                "volleyball",
+                "kayaking"
+            ])
+
+        elif category == "hobby":
+
+            self.subcategory_box.addItems([
+                "pottery",
+                "beading",
+                "drawing"
+            ])
+
+        elif category == "music":
+
+            self.subcategory_box.addItems([
+                "guitar",
+                "piano",
+                "vocal"
+            ])
+
+##########################new section
+# PERFORM SEARCH
+
+    def perform_search(self):
+
+        category = self.category_box.currentText()
+        subcategory = self.subcategory_box.currentText()
+
+        users = search_users(category, subcategory)
+
+        self.table.setRowCount(len(users))
+        self.table.setColumnCount(5)
+
+        self.table.setHorizontalHeaderLabels([
+            "Name",
+            "Email",
+            "Level",
+            "City",
+            "Days"
+        ])
+
+        for row, user in enumerate(users):
+
+            self.table.setItem(row, 0, QTableWidgetItem(user["name"]))
+            self.table.setItem(row, 1, QTableWidgetItem(user["email"]))
+            self.table.setItem(row, 2, QTableWidgetItem(user["level"]))
+            self.table.setItem(row, 3, QTableWidgetItem(user["city"]))
+            self.table.setItem(row, 4, QTableWidgetItem(", ".join(user["days"])))
 
 ##########################new section
 # WELCOME WINDOW
@@ -290,7 +423,7 @@ class WelcomeWindow(QWidget):
         layout.addWidget(btn1)
 
         btn2 = QPushButton("2. Select contact from existing users")
-        btn2.clicked.connect(self.not_ready)
+        btn2.clicked.connect(self.open_search_contacts)
         layout.addWidget(btn2)
 
         btn3 = QPushButton("3. Add new category / group")
@@ -322,6 +455,13 @@ class WelcomeWindow(QWidget):
         self.add_window = AddProfileWindow()
         self.add_window.show()
 
+    ##########################new section
+    # OPEN SEARCH CONTACTS
+
+    def open_search_contacts(self):
+        self.search_window = SearchContactsWindow()
+
+        self.search_window.show()
 ##########################new section
 # PLACEHOLDER
 
