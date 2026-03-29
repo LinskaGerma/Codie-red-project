@@ -4,10 +4,10 @@ from PySide6.QtWidgets import (
     QCheckBox, QMessageBox
 )
 
-from logic.database import (
+from logic.user_service import (
     find_users_by_email,
-    update_user_by_id,
-    delete_user_by_id
+    update_user_profile,
+    delete_user_profile
 )
 
 
@@ -70,7 +70,12 @@ class EditProfileWindow(QWidget):
         self.sat = QCheckBox("Saturday")
         self.sun = QCheckBox("Sunday")
 
-        for d in [self.mon, self.tue, self.wed, self.thu, self.fri, self.sat, self.sun]:
+        self.days_checkboxes = [
+            self.mon, self.tue, self.wed,
+            self.thu, self.fri, self.sat, self.sun
+        ]
+
+        for d in self.days_checkboxes:
             layout.addWidget(d)
 
 ##########################new section
@@ -109,9 +114,13 @@ class EditProfileWindow(QWidget):
 
         email = self.email_input.text().strip()
 
+        if not email:
+            QMessageBox.warning(self, "Error", "Please enter email")
+            return
+
         users = find_users_by_email(email)
 
-        # clear buttons
+        # clear old buttons
         while self.buttons_layout.count():
             child = self.buttons_layout.takeAt(0)
             if child.widget():
@@ -138,19 +147,14 @@ class EditProfileWindow(QWidget):
 
         self.selected_user = user
 
-        self.name_input.setText(user["name"])
-        self.level_box.setCurrentText(user["level"])
-        self.city_input.setText(user["city"])
+        self.name_input.setText(user.get("name", ""))
+        self.level_box.setCurrentText(user.get("level", "beginner"))
+        self.city_input.setText(user.get("city", ""))
 
         days = user.get("days", [])
 
-        self.mon.setChecked("Monday" in days)
-        self.tue.setChecked("Tuesday" in days)
-        self.wed.setChecked("Wednesday" in days)
-        self.thu.setChecked("Thursday" in days)
-        self.fri.setChecked("Friday" in days)
-        self.sat.setChecked("Saturday" in days)
-        self.sun.setChecked("Sunday" in days)
+        for checkbox in self.days_checkboxes:
+            checkbox.setChecked(checkbox.text() in days)
 
         self.time_box.setCurrentText(user.get("time", "evening"))
 
@@ -163,22 +167,9 @@ class EditProfileWindow(QWidget):
             QMessageBox.warning(self, "Error", "Select profile first")
             return
 
-        selected_days = []
-
-        if self.mon.isChecked():
-            selected_days.append("Monday")
-        if self.tue.isChecked():
-            selected_days.append("Tuesday")
-        if self.wed.isChecked():
-            selected_days.append("Wednesday")
-        if self.thu.isChecked():
-            selected_days.append("Thursday")
-        if self.fri.isChecked():
-            selected_days.append("Friday")
-        if self.sat.isChecked():
-            selected_days.append("Saturday")
-        if self.sun.isChecked():
-            selected_days.append("Sunday")
+        selected_days = [
+            checkbox.text() for checkbox in self.days_checkboxes if checkbox.isChecked()
+        ]
 
         updated_profile = self.selected_user.copy()
 
@@ -188,9 +179,12 @@ class EditProfileWindow(QWidget):
         updated_profile["days"] = selected_days
         updated_profile["time"] = self.time_box.currentText()
 
-        update_user_by_id(updated_profile["id"], updated_profile)
+        success = update_user_profile(updated_profile["id"], updated_profile)
 
-        QMessageBox.information(self, "Success", "Profile updated")
+        if success:
+            QMessageBox.information(self, "Success", "Profile updated")
+        else:
+            QMessageBox.warning(self, "Error", "Update failed")
 
 ##########################new section
 # DELETE PROFILE
@@ -201,12 +195,14 @@ class EditProfileWindow(QWidget):
             QMessageBox.warning(self, "Error", "Select profile first")
             return
 
-        delete_user_by_id(self.selected_user["id"])
+        success = delete_user_profile(self.selected_user["id"])
 
-        QMessageBox.information(self, "Deleted", "Profile removed")
-
-        self.selected_user = None
-        self.clear_form()
+        if success:
+            QMessageBox.information(self, "Deleted", "Profile removed")
+            self.selected_user = None
+            self.clear_form()
+        else:
+            QMessageBox.warning(self, "Error", "Delete failed")
 
 ##########################new section
 # CLEAR FORM
@@ -216,8 +212,8 @@ class EditProfileWindow(QWidget):
         self.name_input.clear()
         self.city_input.clear()
 
-        for d in [self.mon, self.tue, self.wed, self.thu, self.fri, self.sat, self.sun]:
-            d.setChecked(False)
+        for checkbox in self.days_checkboxes:
+            checkbox.setChecked(False)
 
         self.level_box.setCurrentIndex(0)
         self.time_box.setCurrentIndex(0)

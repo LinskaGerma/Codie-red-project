@@ -4,7 +4,8 @@ from PySide6.QtWidgets import (
     QCheckBox, QMessageBox
 )
 
-from logic.database import save_user, load_database
+from logic.user_service import create_user
+from data.database import load_database
 
 
 class AddProfileWindow(QWidget):
@@ -72,15 +73,17 @@ class AddProfileWindow(QWidget):
 
         layout.addWidget(QLabel("Select available days"))
 
-        self.mon = QCheckBox("Monday")
-        self.tue = QCheckBox("Tuesday")
-        self.wed = QCheckBox("Wednesday")
-        self.thu = QCheckBox("Thursday")
-        self.fri = QCheckBox("Friday")
-        self.sat = QCheckBox("Saturday")
-        self.sun = QCheckBox("Sunday")
+        self.days_checkboxes = [
+            QCheckBox("Monday"),
+            QCheckBox("Tuesday"),
+            QCheckBox("Wednesday"),
+            QCheckBox("Thursday"),
+            QCheckBox("Friday"),
+            QCheckBox("Saturday"),
+            QCheckBox("Sunday"),
+        ]
 
-        for d in [self.mon, self.tue, self.wed, self.thu, self.fri, self.sat, self.sun]:
+        for d in self.days_checkboxes:
             layout.addWidget(d)
 
 ##########################new section
@@ -135,22 +138,11 @@ class AddProfileWindow(QWidget):
             QMessageBox.warning(self, "Error", "Name and Email are required")
             return
 
-        selected_days = []
-
-        if self.mon.isChecked():
-            selected_days.append("Monday")
-        if self.tue.isChecked():
-            selected_days.append("Tuesday")
-        if self.wed.isChecked():
-            selected_days.append("Wednesday")
-        if self.thu.isChecked():
-            selected_days.append("Thursday")
-        if self.fri.isChecked():
-            selected_days.append("Friday")
-        if self.sat.isChecked():
-            selected_days.append("Saturday")
-        if self.sun.isChecked():
-            selected_days.append("Sunday")
+        selected_days = [
+            checkbox.text()
+            for checkbox in self.days_checkboxes
+            if checkbox.isChecked()
+        ]
 
         profile = {
             "name": name,
@@ -163,7 +155,7 @@ class AddProfileWindow(QWidget):
             "time": self.time_box.currentText()
         }
 
-        save_user(profile)
+        create_user(profile)
 
         QMessageBox.information(self, "Success", "Profile saved successfully")
 
@@ -178,8 +170,8 @@ class AddProfileWindow(QWidget):
         self.email_input.clear()
         self.city_input.clear()
 
-        for d in [self.mon, self.tue, self.wed, self.thu, self.fri, self.sat, self.sun]:
-            d.setChecked(False)
+        for checkbox in self.days_checkboxes:
+            checkbox.setChecked(False)
 
         self.level_box.setCurrentIndex(0)
         self.time_box.setCurrentIndex(0)

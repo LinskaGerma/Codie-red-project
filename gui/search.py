@@ -4,7 +4,8 @@ from PySide6.QtWidgets import (
     QTableWidgetItem, QMessageBox
 )
 
-from logic.database import search_users, load_database
+from logic.user_service import search_users
+from data.database import load_database
 
 
 class SearchContactsWindow(QWidget):
@@ -38,7 +39,7 @@ class SearchContactsWindow(QWidget):
         self.update_subcategories(self.category_box.currentText())
 
 ##########################new section
-# SEARCH BUTTON
+# SEARCH
 
         search_button = QPushButton("Search")
         search_button.clicked.connect(self.perform_search)
@@ -53,33 +54,31 @@ class SearchContactsWindow(QWidget):
         self.setLayout(layout)
 
 ##########################new section
-# LOAD CATEGORIES
+# LOAD
 
     def load_categories(self):
         database = load_database()
-        self.category_box.clear()
         self.category_box.addItems(list(database.keys()))
 
 ##########################new section
-# UPDATE SUBCATEGORIES
+# UPDATE
 
     def update_subcategories(self, category):
         database = load_database()
-
         self.subcategory_box.clear()
 
         if category in database:
             self.subcategory_box.addItems(list(database[category].keys()))
 
 ##########################new section
-# PERFORM SEARCH
+# SEARCH LOGIC
 
     def perform_search(self):
 
-        category = self.category_box.currentText()
-        subcategory = self.subcategory_box.currentText()
-
-        users = search_users(category, subcategory)
+        users = search_users(
+            self.category_box.currentText(),
+            self.subcategory_box.currentText()
+        )
 
         if not users:
             QMessageBox.information(self, "Info", "No users found")
@@ -90,12 +89,7 @@ class SearchContactsWindow(QWidget):
         self.table.setColumnCount(6)
 
         self.table.setHorizontalHeaderLabels([
-            "Name",
-            "Email",
-            "Level",
-            "City",
-            "Days",
-            "Time"
+            "Name", "Email", "Level", "City", "Days", "Time"
         ])
 
         for row, user in enumerate(users):
