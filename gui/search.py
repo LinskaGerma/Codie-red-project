@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton,
     QVBoxLayout, QComboBox, QTableWidget,
-    QTableWidgetItem, QMessageBox
+    QTableWidgetItem, QMessageBox,
+    QHeaderView, QSizePolicy
 )
 
 from logic.user_service import search_users
@@ -15,6 +16,10 @@ class SearchContactsWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Search Contacts")
+
+        # ✅ размер окна
+        self.resize(900, 500)
+        self.setMinimumSize(700, 400)
 
         layout = QVBoxLayout()
 
@@ -39,7 +44,7 @@ class SearchContactsWindow(QWidget):
         self.update_subcategories(self.category_box.currentText())
 
 ##########################new section
-# SEARCH
+# SEARCH BUTTON
 
         search_button = QPushButton("Search")
         search_button.clicked.connect(self.perform_search)
@@ -49,36 +54,53 @@ class SearchContactsWindow(QWidget):
 # TABLE
 
         self.table = QTableWidget()
+
+        # ✅ таблица растягивается
+        self.table.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+
         layout.addWidget(self.table)
 
         self.setLayout(layout)
 
 ##########################new section
-# LOAD
+# AUTO REFRESH
+
+    def showEvent(self, event):
+        self.load_categories()
+        self.update_subcategories(self.category_box.currentText())
+        super().showEvent(event)
+
+##########################new section
+# LOAD CATEGORIES
 
     def load_categories(self):
         database = load_database()
+        self.category_box.clear()
         self.category_box.addItems(list(database.keys()))
 
 ##########################new section
-# UPDATE
+# UPDATE SUBCATEGORIES
 
     def update_subcategories(self, category):
         database = load_database()
+
         self.subcategory_box.clear()
 
         if category in database:
             self.subcategory_box.addItems(list(database[category].keys()))
 
 ##########################new section
-# SEARCH LOGIC
+# PERFORM SEARCH
 
     def perform_search(self):
 
-        users = search_users(
-            self.category_box.currentText(),
-            self.subcategory_box.currentText()
-        )
+        category = self.category_box.currentText()
+        subcategory = self.subcategory_box.currentText()
+
+        users = search_users(category, subcategory)
 
         if not users:
             QMessageBox.information(self, "Info", "No users found")
@@ -89,7 +111,12 @@ class SearchContactsWindow(QWidget):
         self.table.setColumnCount(6)
 
         self.table.setHorizontalHeaderLabels([
-            "Name", "Email", "Level", "City", "Days", "Time"
+            "Name",
+            "Email",
+            "Level",
+            "City",
+            "Days",
+            "Time"
         ])
 
         for row, user in enumerate(users):
@@ -100,3 +127,9 @@ class SearchContactsWindow(QWidget):
             self.table.setItem(row, 3, QTableWidgetItem(user["city"]))
             self.table.setItem(row, 4, QTableWidgetItem(", ".join(user.get("days", []))))
             self.table.setItem(row, 5, QTableWidgetItem(user.get("time", "")))
+
+##########################new section
+# AUTO RESIZE TABLE
+
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.resizeRowsToContents()

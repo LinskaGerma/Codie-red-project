@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem
+    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy
 )
 
 from PySide6.QtCore import Qt
@@ -16,6 +16,7 @@ class ViewGroupsWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Groups Overview")
+        self.showMaximized()
 
         layout = QVBoxLayout()
 
@@ -25,6 +26,10 @@ class ViewGroupsWindow(QWidget):
         self.setLayout(layout)
 
         self.load_data()
+        self.table.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
 
 ##########################new section
 # LOAD DATA
@@ -41,6 +46,7 @@ class ViewGroupsWindow(QWidget):
         self.table.setRowCount(total_rows)
         self.table.setColumnCount(max_subcats + 1)
         self.table.clearContents()
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         current_row = 0
 
