@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy
+    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy, QPushButton
 )
 
 from PySide6.QtCore import Qt
@@ -16,20 +16,27 @@ class ViewGroupsWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Groups Overview")
-        self.showMaximized()
+        self.resize(1000, 600)
 
         layout = QVBoxLayout()
 
+        # 🔥 КНОПКА ОБНОВЛЕНИЯ
+        refresh_button = QPushButton("🔄 Refresh")
+        refresh_button.clicked.connect(self.load_data)
+        layout.addWidget(refresh_button)
+
         self.table = QTableWidget()
+
+        self.table.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+
         layout.addWidget(self.table)
 
         self.setLayout(layout)
 
         self.load_data()
-        self.table.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Expanding
-        )
 
 ##########################new section
 # LOAD DATA
@@ -39,7 +46,7 @@ class ViewGroupsWindow(QWidget):
         data = get_groups_matrix()
         levels = ["beginner", "middle", "advanced", "professional"]
 
-        max_subcats = max(len(sub) for sub in data.values())
+        max_subcats = max((len(sub) for sub in data.values()), default=1)
 
         total_rows = sum(len(levels) + 2 for _ in data)
 
@@ -87,7 +94,7 @@ class ViewGroupsWindow(QWidget):
 
                 col = 1
                 for sub in subcats:
-                    value = subcats[sub][level]
+                    value = subcats.get(sub, {}).get(level, 0)
 
                     item = QTableWidgetItem(str(value))
                     item.setTextAlignment(Qt.AlignCenter)
@@ -100,4 +107,3 @@ class ViewGroupsWindow(QWidget):
 
             current_row += 1
 
-        self.table.resizeColumnsToContents()
